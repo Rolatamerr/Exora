@@ -541,17 +541,41 @@
 
             if (msgs.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10 italic">No messages yet. Waiting for a buyer inquiry...</div>';
+                
+                // Reset names
+                const sidebarName = document.querySelector('#demoChatContact span');
+                const headerName = document.querySelector('#chatPanel h3') || document.querySelector('.bg-gray-50\\/50 h3');
+                const headerInitial = document.querySelector('.bg-gray-50\\/50 .rounded-full');
+                if (sidebarName) sidebarName.textContent = 'Guest Buyer';
+                if (headerName) headerName.textContent = 'Guest Buyer';
+                if (headerInitial) headerInitial.textContent = 'G';
                 return;
             }
 
+            // Find the most recent buyer message to get their name
+            const buyerMsgs = msgs.filter(m => m.from === 'me');
+            let buyerName = 'Guest Buyer';
+            if (buyerMsgs.length > 0 && buyerMsgs[buyerMsgs.length - 1].senderName) {
+                buyerName = buyerMsgs[buyerMsgs.length - 1].senderName;
+            }
+
+            // Update UI Names dynamically
+            const sidebarName = document.querySelector('#demoChatContact span');
+            const headerName = document.querySelector('.bg-gray-50\\/50 h3');
+            const headerInitial = document.querySelector('.bg-gray-50\\/50 .rounded-full');
+            if (sidebarName) sidebarName.textContent = buyerName;
+            if (headerName) headerName.textContent = buyerName;
+            if (headerInitial) headerInitial.textContent = buyerName.charAt(0).toUpperCase();
+
             container.innerHTML = msgs.map(m => {
                 const isSeller = m.from === 'seller';
+                const displayName = isSeller ? 'Earth & Fire (You)' : buyerName;
                 return `
                     <div class="flex flex-col ${isSeller ? 'items-end' : 'items-start'} animate-fade-in">
                         <div class="px-4 py-2.5 max-w-[75%] text-sm shadow-sm ${isSeller ? 'bg-sage text-white rounded-2xl rounded-tr-sm' : 'bg-gray-100 text-dark rounded-2xl rounded-tl-sm border border-gray-200'}">
                             ${m.text}
                         </div>
-                        <span class="text-[10px] text-gray-400 mt-1 mx-1">${isSeller ? 'Earth & Fire (You)' : 'Buyer'}</span>
+                        <span class="text-[10px] text-gray-400 mt-1 mx-1">${displayName}</span>
                     </div>
                 `;
             }).join('');
@@ -588,6 +612,13 @@
 
         // Poll for new messages every 1 second
         setInterval(loadSellerMessages, 1000);
+        
+        // Listen for storage events for instant cross-tab sync
+        window.addEventListener('storage', (e) => {
+            if (e.key === CHAT_KEY) {
+                loadSellerMessages();
+            }
+        });
         
         // Initial load
         document.addEventListener('DOMContentLoaded', loadSellerMessages);

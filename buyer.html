@@ -623,16 +623,27 @@
             if (!text) return;
             const key = `chat_${currentChatSeller}`;
             const msgs = JSON.parse(localStorage.getItem(key) || '[]');
-            msgs.push({from: 'me', text});
+            
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const senderName = currentUser ? currentUser.name : 'Guest Buyer';
+            
+            msgs.push({from: 'me', text, senderName});
             localStorage.setItem(key, JSON.stringify(msgs));
             inp.value = '';
             loadChatMessages();
             setTimeout(() => {
-                msgs.push({from: 'seller', text: 'I have received your message and will reply soon.'});
-                localStorage.setItem(key, JSON.stringify(msgs));
+                const updatedMsgs = JSON.parse(localStorage.getItem(key) || '[]');
+                updatedMsgs.push({from: 'seller', text: 'I have received your message and will reply soon.'});
+                localStorage.setItem(key, JSON.stringify(updatedMsgs));
                 loadChatMessages();
             }, 1000);
         }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === `chat_${currentChatSeller}`) {
+                loadChatMessages();
+            }
+        });
 
         document.querySelectorAll('#categoryFilters input').forEach(inp => inp.onchange = renderProducts);
         updateBadge();
