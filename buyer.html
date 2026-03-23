@@ -579,13 +579,7 @@
 
         let chatPollInterval = null;
 
-        function loadChatMessages() {
-            const key = `chat_${currentChatSeller}`;
-            const msgs = JSON.parse(localStorage.getItem(key) || '[]');
-            const container = document.getElementById('chatMessages');
-            container.innerHTML = msgs.map(m => `<div class="p-2 rounded-lg max-w-[90%] ${m.from === 'me' ? 'bg-sage text-white self-end' : 'bg-white self-start shadow-sm border border-gray-100'}">${m.text}</div>`).join('');
-            container.scrollTop = container.scrollHeight;
-        }
+
 
         function openChatFromProfile() {
             closeSellerModal();
@@ -604,7 +598,7 @@
                 'Clear Chat?', 
                 'Are you sure you want to delete the entire conversation with this artisan?', 
                 () => {
-                    const key = `chat_${currentChatSeller}`;
+                    const key = getActiveChatKey();
                     localStorage.removeItem(key);
                     loadChatMessages();
                     showToast('Conversation cleared');
@@ -617,11 +611,18 @@
             if(chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
         }
 
+        function getActiveChatKey() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const buyerId = currentUser ? currentUser.email.toLowerCase().split('@')[0] : 'guest';
+            return `chat_${currentChatSeller}_${buyerId}`;
+        }
+
         function sendMessage() {
             const inp = document.getElementById('chatInput');
             const text = inp.value.trim();
             if (!text) return;
-            const key = `chat_${currentChatSeller}`;
+            
+            const key = getActiveChatKey();
             const msgs = JSON.parse(localStorage.getItem(key) || '[]');
             
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -639,8 +640,30 @@
             }, 1000);
         }
 
+        function loadChatMessages() {
+            if (!currentChatSeller) return;
+            const key = getActiveChatKey();
+            const msgs = JSON.parse(localStorage.getItem(key) || '[]');
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = msgs.map(m => `<div class="p-2 rounded-lg max-w-[90%] ${m.from === 'me' ? 'bg-sage text-white self-end' : 'bg-white self-start shadow-sm border border-gray-100'}">${m.text}</div>`).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearBuyerChat() {
+            showConfirm(
+                'Clear Chat?', 
+                'Are you sure you want to delete the entire conversation with this artisan?', 
+                () => {
+                    const key = getActiveChatKey();
+                    localStorage.removeItem(key);
+                    loadChatMessages();
+                    showToast('Conversation cleared');
+                }
+            );
+        }
+
         window.addEventListener('storage', (e) => {
-            if (e.key === `chat_${currentChatSeller}`) {
+            if (e.key === getActiveChatKey()) {
                 loadChatMessages();
             }
         });
