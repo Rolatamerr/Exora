@@ -501,12 +501,15 @@
     <!-- Seller Chat Script -->
     <script>
         // Setup Auth State & Empty UI
-        const currentSeller = JSON.parse(localStorage.getItem('currentUser')) || { name: 'Earth & Fire Studio', email: 'earthandfire@gmail.com' };
+        let currentSeller = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentSeller || currentSeller.role !== 'seller') {
+            currentSeller = { name: 'Earth & Fire Studio', email: 'earthandfire@gmail.com' };
+        }
         
         document.getElementById('sellerWelcomeHeader').textContent = `Welcome back, ${currentSeller.name || currentSeller.workshop || 'Artisan'}`;
         
         const CHAT_KEY = 'chat_' + currentSeller.email.split('@')[0];
-        let lastMessageCount = 0;
+        let lastMessageCount = -1;
 
         if (currentSeller.email !== 'earthandfire@gmail.com') {
             document.getElementById('sellerStatsGrid').innerHTML = `
