@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nile Lotus Oushak | Exora Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        beige: { DEFAULT: '#f4f1ea', dark: '#e5decb' },
+                        sage: { DEFAULT: '#8a9a86', dark: '#6b7a67', light: '#b1c0ad' },
+                        dark: '#2c3e2e'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark antialiased">
+    <!-- Navbar (Buyer specific) -->
+    <nav class="bg-white fixed w-full z-50 shadow-sm border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-6">
+                    <a href="index.html" class="flex-shrink-0 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-sage text-2xl"></i>
+                        <span class="font-serif font-bold text-2xl tracking-wide text-sage-dark relative top-0.5">Exora</span>
+                    </a>
+                    <span class="text-gray-300">|</span>
+                    <a href="buyer.html" class="font-medium text-gray-500 hover:text-sage transition hidden md:block"><i class="fa-solid fa-arrow-left mr-1"></i> Back to Shop</a>
+                </div>
+                <div class="flex space-x-6 items-center">
+                    <div class="relative hidden sm:block">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" placeholder="Search carpets..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-sage/50 w-64 bg-gray-50">
+                    </div>
+                    <a href="#" class="text-dark hover:text-sage relative">
+                        <i class="fa-solid fa-cart-shopping text-xl"></i>
+                        <span class="absolute -top-2 -right-2 bg-sage text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">2</span>
+                    </a>
+                    <a href="#" class="h-10 w-10 bg-beige rounded-full flex items-center justify-center hover:bg-beige-dark transition shadow-inner border border-gray-200">
+                        <i class="fa-solid fa-user text-sage-dark"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-24 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Product Main Info -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 mb-8 grid md:grid-cols-2 gap-12">
+            <!-- Images -->
+            <div x-data="{ mainImg: 'https://images.unsplash.com/photo-1575816777690-3ffd404d0e9e?w=1200&auto=format&fit=crop' }">
+                <div class="rounded-2xl overflow-hidden bg-gray-100 h-96 md:h-[500px] mb-4 relative cursor-zoom-in">
+                    <img :src="mainImg" alt="Main Product Image" class="w-full h-full object-cover">
+                    <span class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded text-sm font-bold text-sage-dark shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-shield-check text-sage"></i> Expert Verified
+                    </span>
+                </div>
+                <div class="flex gap-4 overflow-x-auto pb-2">
+                    <img src="https://images.unsplash.com/photo-1575816777690-3ffd404d0e9e?w=300&auto=format&fit=crop" @click="mainImg = 'https://images.unsplash.com/photo-1575816777690-3ffd404d0e9e?w=1200&auto=format&fit=crop'" class="w-24 h-24 rounded-lg object-cover cursor-pointer border-2 hover:border-sage border-transparent transition">
+                    <img src="https://images.unsplash.com/photo-1554995207-c18c203602cb?w=300&auto=format&fit=crop" @click="mainImg = 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=1200&auto=format&fit=crop'" class="w-24 h-24 rounded-lg object-cover cursor-pointer border-2 hover:border-sage border-transparent transition">
+                    <img src="https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=300&auto=format&fit=crop" @click="mainImg = 'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=1200&auto=format&fit=crop'" class="w-24 h-24 rounded-lg object-cover cursor-pointer border-2 hover:border-sage border-transparent transition">
+                </div>
+            </div>
+
+            <!-- Details -->
+            <div class="flex flex-col justify-center">
+                <div class="mb-4">
+                    <a href="#" class="text-sage font-medium text-sm hover:underline">Traditional Wool</a>
+                    <h1 class="text-4xl font-serif font-bold text-dark mt-2 mb-2">Nile Lotus Oushak</h1>
+                    <div class="flex items-center gap-4 text-sm">
+                        <div class="flex text-yellow-400">
+                            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                        </div>
+                        <span class="text-gray-600 font-medium">4.9 (12 reviews)</span>
+                    </div>
+                </div>
+
+                <div class="text-3xl font-bold text-sage-dark mb-6 border-b border-gray-100 pb-6">
+                    $1,250
+                    <p class="text-sm font-normal text-gray-500 mt-2"><i class="fa-solid fa-plane-departure mr-1 text-sage"></i> Free secure shipping worldwide via Exora Logistics.</p>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="font-bold mb-3">About this piece</h3>
+                    <p class="text-gray-600 leading-relaxed text-sm mb-4">
+                        Hand-knotted in the Luxor artisan cooperative using 100% locally sourced Egyptian wool. The design features a modern adaptation of the traditional Nile lotus motif, symbolizing rebirth and the sun. Took approximately 3 months to complete.
+                    </p>
+                    <ul class="text-sm space-y-2 text-gray-700">
+                        <li><span class="font-medium">Dimensions:</span> 150cm x 220cm (5' x 7')</li>
+                        <li><span class="font-medium">Material:</span> 100% Wool on Cotton Foundation</li>
+                        <li><span class="font-medium">Artisan:</span> Fatima H., Luxor Coop (<a href="#" class="text-sage hover:underline">View Profile</a>)</li>
+                    </ul>
+                </div>
+
+                <div class="bg-beige/40 p-4 rounded-xl border border-beige-dark mb-8">
+                    <div class="flex gap-4">
+                        <i class="fa-solid fa-lock text-sage text-2xl mt-1"></i>
+                        <div>
+                            <h4 class="font-bold text-dark text-sm">Exora Escrow Guarantee</h4>
+                            <p class="text-xs text-gray-600 mt-1">Your payment is held securely in escrow and is only released to the artisan after the carpet passes pre-shipment quality inspection and is successfully delivered to you.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button class="flex-1 bg-sage hover:bg-sage-dark text-white font-medium py-3.5 px-6 rounded-xl shadow-lg transition shadow-sage/30 flex justify-center items-center gap-2 text-lg">
+                        <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <button class="bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-600 px-6 rounded-xl transition font-medium text-lg">
+                        <i class="fa-solid fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews & Comments -->
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 mb-8">
+            <h2 class="text-2xl font-serif font-bold text-dark mb-6 border-b border-gray-100 pb-4">Customer Reviews & Comments</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8 mb-8 border-b border-gray-100 pb-8">
+                <div class="md:col-span-1 border-r border-gray-100 pr-8">
+                    <h3 class="text-5xl font-bold text-sage-dark mb-2">4.9</h3>
+                    <div class="flex text-yellow-400 text-xl mb-2">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                    </div>
+                    <p class="text-gray-500 text-sm">Based on 12 verified purchases</p>
+                </div>
+                <!-- Review List -->
+                <div class="md:col-span-2 space-y-6">
+                    <div class="flex gap-4">
+                        <img src="https://ui-avatars.com/api/?name=Sarah+M&background=random" class="w-12 h-12 rounded-full">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <h4 class="font-bold text-sm">Sarah Mitchell</h4>
+                                <span class="text-xs text-gray-400">October 12, 2025</span>
+                            </div>
+                            <div class="flex text-yellow-400 text-xs mb-2">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                            </div>
+                            <p class="text-sm text-gray-700">Absolutely stunning! The colors are exactly as shown in the photos, perhaps even richer in person. The escrow system made me feel very secure ordering from overseas. Will buy again from Fatima's cooperative.</p>
+                            <div class="flex items-center gap-2 mt-2 text-xs text-sage font-medium">
+                                <i class="fa-solid fa-circle-check"></i> Exora Verified Purchase
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <img src="https://ui-avatars.com/api/?name=David+R&background=random" class="w-12 h-12 rounded-full">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <h4 class="font-bold text-sm">David Robinson</h4>
+                                <span class="text-xs text-gray-400">September 04, 2025</span>
+                            </div>
+                            <div class="flex text-yellow-400 text-xs mb-2">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i>
+                            </div>
+                            <p class="text-sm text-gray-700">The quality of the wool is fantastic. Shipping took about 10 days to the US, but tracking was excellent. The pre-shipment inspection report sent by Exora gave great peace of mind.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Comment -->
+            <div>
+                <h3 class="font-bold text-lg mb-4">Leave a Question or Comment</h3>
+                <form class="space-y-4">
+                    <textarea class="w-full border border-gray-300 rounded-xl py-3 px-4 focus:ring-2 focus:ring-sage focus:outline-none text-sm" rows="3" placeholder="Ask a question about this product..."></textarea>
+                    <button type="button" class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-6 rounded-lg transition text-sm">Post Comment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

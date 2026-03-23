@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout | Exora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        beige: { DEFAULT: '#f4f1ea', dark: '#e5decb' },
+                        sage: { DEFAULT: '#8a9a86', dark: '#6b7a67', light: '#b1c0ad' },
+                        dark: '#2c3e2e'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+        .checkout-step.active { border-color: #8a9a86; color: #2c3e2e; }
+        .checkout-step.completed { background-color: #8a9a86; color: white; border-color: #8a9a86; }
+        
+        @keyframes slideInRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .animate-slide-in { animation: slideInRight 0.5s ease forwards; }
+
+        /* Custom Dialog & Toast (Same as buyer/seller) */
+        .toast-container { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; pointer-events: none; }
+        .toast-item { background: #2c3e2e; color: white; padding: 0.75rem 1.5rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); pointer-events: auto; animation: toastIn 0.3s ease forwards, toastOut 0.3s ease forwards 2.7s; }
+        @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-100 py-6 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 flex justify-between items-center">
+            <a href="buyer.html" class="flex items-center gap-2 group">
+                <i class="fa-solid fa-arrow-left text-gray-400 group-hover:text-sage transition"></i>
+                <span class="font-serif font-bold text-xl text-sage-dark relative top-0.5">Exora</span>
+            </a>
+            <div class="flex items-center gap-4 text-xs font-bold tracking-widest uppercase text-gray-400">
+                <span class="text-sage border-b-2 border-sage pb-1">Checkout</span>
+                <span>/</span>
+                <span>Payment</span>
+            </div>
+            <div class="w-10"></div> <!-- Spacer -->
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-6xl mx-auto w-full px-6 py-12">
+        <div id="checkoutGrid" class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            
+            <!-- Left Side: Form Details -->
+            <div class="lg:col-span-7 space-y-12">
+                
+                <!-- Shipping Method -->
+                <section class="animate-slide-in" style="animation-delay: 0.1s">
+                    <h2 class="text-2xl font-bold mb-6">Shipping Address</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Full Name</label>
+                            <input type="text" id="shippingName" placeholder="e.g. Rola Ahmed" class="w-full border-b border-gray-200 py-3 outline-none focus:border-sage transition bg-transparent font-medium">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Detailed Street Address</label>
+                            <input type="text" id="shippingAddress" placeholder="House number and street name" class="w-full border-b border-gray-200 py-3 outline-none focus:border-sage transition bg-transparent font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">City</label>
+                            <input type="text" id="shippingCity" placeholder="Cairo" class="w-full border-b border-gray-200 py-3 outline-none focus:border-sage transition bg-transparent font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Phone Number</label>
+                            <input type="text" id="shippingPhone" placeholder="+20 1..." class="w-full border-b border-gray-200 py-3 outline-none focus:border-sage transition bg-transparent font-medium">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Payment Method Simulation -->
+                <section class="animate-slide-in" style="animation-delay: 0.2s">
+                    <h2 class="text-2xl font-bold mb-6">Payment Method</h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center justify-between p-4 border rounded-xl border-sage bg-beige/30 cursor-pointer">
+                            <div class="flex items-center gap-4">
+                                <i class="fa-solid fa-money-bill-wave text-sage text-xl"></i>
+                                <div>
+                                    <p class="font-bold text-sm">Cash on Delivery (COD)</p>
+                                    <p class="text-xs text-gray-500">Pay directly to the courier when your order arrives.</p>
+                                </div>
+                            </div>
+                            <div class="w-5 h-5 rounded-full bg-sage flex items-center justify-center">
+                                <div class="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                        </label>
+                        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                            <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
+                            <p class="text-sm text-blue-800">You selected Cash on Delivery. Please have the exact amount ready to hand to our Exora Local Delivery partner.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Side: Order Summary -->
+            <div class="lg:col-span-5">
+                <div class="bg-white rounded-3xl border border-gray-100 p-8 sticky top-28 shadow-sm animate-slide-in" style="animation-delay: 0.3s">
+                    <h3 class="text-xl font-bold mb-8">Order Summary</h3>
+                    
+                    <!-- Items List -->
+                    <div id="checkoutItems" class="space-y-6 mb-8 max-h-64 overflow-y-auto pr-2">
+                        <!-- JS renders items here -->
+                    </div>
+
+                    <div class="space-y-3 border-t border-gray-50 pt-6 mb-8">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Subtotal</span>
+                            <span id="subtotalPrice" class="font-bold text-dark">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Shipping (Express)</span>
+                            <span class="font-bold text-dark">$15.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Taxes</span>
+                            <span class="font-bold text-dark">$4.50</span>
+                        </div>
+                        <div class="flex justify-between text-lg pt-4 border-t border-gray-50">
+                            <span class="font-bold">Total</span>
+                            <span id="totalPrice" class="font-bold text-sage-dark">$0.00</span>
+                        </div>
+                    </div>
+
+                    <button onclick="placeOrder()" class="w-full bg-sage hover:bg-sage-dark text-white py-4 rounded-2xl font-bold text-lg transition shadow-lg flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-lock text-sm opacity-50"></i>
+                        Complete Purchase
+                    </button>
+                    
+                    <p class="text-[10px] text-gray-400 text-center mt-6 uppercase tracking-widest font-bold">Secure checkout built on trust</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Success View (Hidden by default) -->
+        <div id="successView" class="hidden max-w-lg mx-auto text-center py-20 px-6 bg-white rounded-3xl shadow-2xl border border-gray-50 animate-slide-up">
+            <div class="w-24 h-24 bg-sage/20 text-sage rounded-full flex items-center justify-center text-4xl mx-auto mb-8">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h1 class="text-4xl font-serif font-bold text-dark mb-4">Order Confirmed!</h1>
+            <p class="text-gray-500 mb-8 leading-relaxed">Thank you for your purchase. Your artisan has been notified and is preparing your handmade items with care.</p>
+            <div class="bg-gray-50 p-6 rounded-2xl mb-10 text-left">
+                <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Order ID</p>
+                <p class="font-mono font-bold text-dark tracking-tighter">EX-842-9901-7</p>
+            </div>
+            <a href="buyer.html" class="inline-block bg-dark text-white px-10 py-4 rounded-xl font-bold hover:bg-black transition">Return to Shop</a>
+        </div>
+    </main>
+
+    <footer class="py-12 text-center text-gray-400 text-sm">
+        <p>&copy; 2026 Exora Platform. Built on Trust.</p>
+    </footer>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        // Check Auth State First
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.role !== 'buyer') {
+            window.location.href = 'buyer.html?auth=required';
+        } else {
+            // Auto-fill form fields
+            document.getElementById('shippingName').value = currentUser.name || '';
+            document.getElementById('shippingAddress').value = currentUser.address || '';
+            document.getElementById('shippingCity').value = currentUser.city || 'Cairo';
+            document.getElementById('shippingPhone').value = currentUser.phone || '';
+        }
+
+        let cart = JSON.parse(localStorage.getItem('exoraCart') || '[]');
+
+        function renderCheckout() {
+            const container = document.getElementById('checkoutItems');
+            const subtotalEl = document.getElementById('subtotalPrice');
+            const totalEl = document.getElementById('totalPrice');
+            
+            if (cart.length === 0) {
+                window.location.href = 'buyer.html'; // Redirect back if empty
+                return;
+            }
+
+            let subtotal = 0;
+            container.innerHTML = cart.map(item => {
+                subtotal += item.price;
+                return `
+                    <div class="flex gap-4 group">
+                        <div class="w-16 h-16 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
+                            <img src="${item.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-bold text-sm text-dark">${item.name}</p>
+                            <p class="text-xs text-gray-400">Qty: 1</p>
+                        </div>
+                        <p class="font-bold text-sm text-sage">$${item.price}</p>
+                    </div>
+                `;
+            }).join('');
+
+            subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+            totalEl.textContent = `$${(subtotal + 19.50).toFixed(2)}`;
+        }
+
+        function placeOrder() {
+            // Show loading state simulation
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                // Success logic
+                localStorage.removeItem('exoraCart'); // Clear the cart
+                document.getElementById('checkoutGrid').classList.add('hidden');
+                document.getElementById('successView').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showToast('Payment successful! Order placed.');
+            }, 2000);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-item';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        renderCheckout();
+    </script>
+</body>
+</html>

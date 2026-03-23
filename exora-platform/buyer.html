@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Rugs | Exora Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        beige: { DEFAULT: '#f4f1ea', dark: '#e5decb' },
+                        sage: { DEFAULT: '#8a9a86', dark: '#6b7a67', light: '#b1c0ad' },
+                        dark: '#2c3e2e'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+        .product-card:hover .product-img { transform: scale(1.05); }
+        .product-img { filter: contrast(1.02) saturate(1.05); }
+        
+        /* Modal Backdrop */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease;
+        }
+
+        /* Cart Drawer */
+        #cartDrawer {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+        .animate-slide-up { animation: slideUp 0.4s ease forwards; }
+
+        /* Review Stars */
+        .star-rating i { cursor: pointer; transition: color 0.1s; }
+        .star-rating i:hover, .star-rating i.active { color: #8a9a86; }
+
+        /* Custom Dialog & Toast */
+        .custom-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .custom-dialog-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .custom-dialog {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .custom-dialog-backdrop.active .custom-dialog {
+            transform: scale(1);
+        }
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+        .toast-item {
+            background: #2c3e2e;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            pointer-events: auto;
+            animation: toastIn 0.3s ease forwards, toastOut 0.3s ease forwards 2.7s;
+        }
+        @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark antialiased">
+
+    <!-- Navbar (Old Site Design) -->
+    <nav class="bg-white fixed w-full z-50 shadow-sm border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-6">
+                    <a href="index.html" class="flex-shrink-0 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-sage text-2xl"></i>
+                        <span class="font-serif font-bold text-2xl tracking-wide text-sage-dark relative top-0.5">Exora</span>
+                    </a>
+                    <span class="text-gray-300">|</span>
+                    <span class="font-medium text-gray-600 hidden md:block">Buyer Portal</span>
+                </div>
+                <div class="flex space-x-6 items-center">
+                    <div class="relative hidden sm:block">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" placeholder="Search products..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-sage/50 w-64 bg-gray-50">
+                    </div>
+                    <button onclick="toggleCart()" class="text-dark hover:text-sage relative">
+                        <i class="fa-solid fa-cart-shopping text-xl"></i>
+                        <span id="cartBadge" class="absolute -top-2 -right-2 bg-sage text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                    </button>
+                    <div id="buyerProfileBadge" class="h-10 w-10 bg-beige rounded-full flex items-center justify-center hover:bg-beige-dark transition shadow-inner border border-gray-200 cursor-pointer" title="Guest">
+                        <i class="fa-solid fa-user text-sage-dark"></i>
+                    </div>
+                    <a href="index.html" id="buyerAuthLink" onclick="if(this.textContent.includes('Logout')) localStorage.removeItem('currentUser');" class="text-sm text-gray-500 hover:text-dark font-medium transition flex items-center gap-2 border-l border-gray-200 pl-4 ml-2"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-20">
+        <!-- Banner (Old Design) -->
+        <div class="bg-sage text-white py-12 px-4 shadow-inner">
+            <div class="max-w-7xl mx-auto text-center">
+                <h1 class="text-4xl font-bold mb-4">Discover Authentic Handicrafts</h1>
+                <p class="text-lg opacity-90 max-w-2xl mx-auto">Browse directly from verified Egyptian artisans. Every purchase is protected by our secure escrow system and pre-shipping quality inspection.</p>
+            </div>
+        </div>
+
+        <!-- Main Content (Old Structure) -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex flex-col md:flex-row gap-8">
+                
+                <!-- Filters Sidebar (Old Structure) -->
+                <aside class="w-full md:w-64 flex-shrink-0">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-28">
+                        <h3 class="font-bold text-lg mb-4 border-b pb-2">Filters</h3>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-medium text-gray-700 mb-3">Categories</h4>
+                            <div id="categoryFilters" class="space-y-2 text-sm text-gray-600">
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Bath" checked class="accent-sage"> Artisan Bath & Body</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Leather" checked class="accent-sage"> Handcrafted Leather</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Wood" checked class="accent-sage"> Reclaimed Wood Home</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Textile" checked class="accent-sage"> Knitted Textiles</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Home" checked class="accent-sage"> Botanics & Candles</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="Ceramic" checked class="accent-sage"> Studio Ceramics</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <h4 class="font-medium text-gray-700 mb-3">Price Range</h4>
+                            <input type="range" class="w-full accent-sage mb-2">
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>$50</span><span>$5,000+</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-gray-700 mb-3">Verification</h4>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-sm text-gray-600">
+                                    <input type="checkbox" checked class="accent-sage"> 
+                                    <span class="flex items-center gap-1"><i class="fa-solid fa-certificate text-sage text-xs"></i> Expert Verified</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Product List (Old Structure) -->
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-serif text-dark font-bold">New Arrivals <span id="productCount" class="text-gray-400 font-sans font-normal text-lg">(6)</span></h2>
+                        <select id="sortSelect" onchange="renderProducts()" class="border-gray-200 border rounded-lg py-2 px-4 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-sage">
+                            <option value="featured">Sort by: Featured</option>
+                            <option value="p-low">Price: Low to High</option>
+                            <option value="p-high">Price: High to Low</option>
+                            <option value="rating">Highest Rated</option>
+                        </select>
+                    </div>
+
+                    <!-- 2-Column grid (Old Structure) -->
+                    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <!-- Products inserted here by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PRODUCT DETAIL MODAL
+    ══════════════════════════════════════ -->
+    <div id="productModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+        <div class="modal-overlay absolute inset-0" onclick="closeProductModal()"></div>
+        <div class="bg-white w-full max-w-5xl md:h-[80vh] rounded-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col md:flex-row animate-slide-up">
+            <button onclick="closeProductModal()" class="absolute top-6 right-6 z-[60] text-gray-400 hover:text-dark bg-gray-100/50 hover:bg-gray-200 rounded-full w-9 h-9 flex items-center justify-center transition shadow-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <!-- Left: Image -->
+            <div class="md:w-1/2 bg-gray-100 h-64 md:h-full relative">
+                <img id="modalImg" src="" class="w-full h-full object-cover">
+            </div>
+            <!-- Right: Details & Comments -->
+            <div class="md:w-1/2 flex flex-col h-full bg-white overflow-y-auto">
+                <div class="p-8">
+                    <div class="flex justify-between items-start mb-2">
+                        <span id="modalCategory" class="text-xs font-bold text-sage uppercase tracking-widest font-sans"></span>
+                        <div id="modalRating" class="text-yellow-400 text-sm"></div>
+                    </div>
+                    <h2 id="modalTitle" class="text-2xl font-bold mb-2"></h2>
+                    <p id="modalPrice" class="text-xl font-bold text-sage-dark mb-4"></p>
+                    <p id="modalDesc" class="text-gray-600 text-sm leading-relaxed mb-6"></p>
+                    
+                    <div class="flex items-center gap-4 mb-8">
+                        <button onclick="modalAddToCart()" id="modalAddBtn" class="flex-1 bg-sage hover:bg-sage-dark text-white py-3 rounded-xl font-bold transition shadow-md">Add to Cart</button>
+                        <button onclick="openChatFromModal()" class="w-12 h-12 border border-sage/20 text-sage hover:bg-beige/50 rounded-xl flex items-center justify-center transition">
+                            <i class="fa-solid fa-comment-dots"></i>
+                        </button>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-6">
+                        <h3 class="font-bold mb-4">Customer Reviews</h3>
+                        <div id="modalComments" class="space-y-4 mb-6"></div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Write a Review</p>
+                            <div class="star-rating mb-2 text-gray-300 flex gap-1" id="reviewStars">
+                                <i class="fa-solid fa-star" data-val="1"></i>
+                                <i class="fa-solid fa-star" data-val="2"></i>
+                                <i class="fa-solid fa-star" data-val="3"></i>
+                                <i class="fa-solid fa-star" data-val="4"></i>
+                                <i class="fa-solid fa-star" data-val="5"></i>
+                            </div>
+                            <textarea id="reviewText" rows="2" placeholder="Your experience..." class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none resize-none transition mb-2"></textarea>
+                            <button onclick="submitReview()" class="text-xs font-bold text-sage hover:underline uppercase">Post Review</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         CART DRAWER
+    ══════════════════════════════════════ -->
+    <div id="cartOverlay" class="fixed inset-0 bg-black/40 z-[200] hidden opacity-0 transition-opacity" onclick="toggleCart()"></div>
+    <div id="cartDrawer" class="fixed top-0 right-0 w-full sm:w-80 h-full bg-white z-[201] translate-x-full flex flex-col shadow-2xl">
+        <div class="p-6 flex items-center justify-between border-b border-gray-100">
+            <h2 class="text-lg font-bold">Shopping Cart</h2>
+            <button onclick="toggleCart()" class="text-gray-400 hover:text-dark">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+        <div class="p-6 border-t border-gray-100 bg-gray-50">
+            <div class="flex justify-between mb-4">
+                <span class="text-gray-500">Total</span>
+                <span id="cartSubtotal" class="font-bold">$0.00</span>
+            </div>
+            <button onclick="if(cart.length === 0) showToast('Your cart is empty'); else if(!JSON.parse(localStorage.getItem('currentUser'))) showToast('You must be signed in to access checkout'); else window.location.href='checkout.html';" class="w-full bg-dark text-white py-3 rounded-lg font-bold hover:bg-black transition text-sm">Checkout</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SELLER MODAL & CHAT UI
+    ══════════════════════════════════════ -->
+    <div id="sellerModal" class="fixed inset-0 z-[300] hidden flex items-center justify-center p-4">
+        <div class="modal-overlay absolute inset-0" onclick="closeSellerModal()"></div>
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative z-10 overflow-hidden animate-slide-up">
+            <button onclick="closeSellerModal()" class="absolute top-4 right-4 z-[60] text-white/80 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="bg-sage p-6 text-white text-center">
+                <div id="sellerAvatar" class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3"></div>
+                <h3 id="sellerName" class="text-xl font-bold"></h3>
+                <p id="sellerLocation" class="text-white/70 text-xs mt-1"></p>
+            </div>
+            <div class="p-6">
+                <p id="sellerBio" class="text-sm text-gray-600 leading-relaxed mb-6"></p>
+                <button onclick="openChatFromProfile()" class="w-full bg-dark text-white py-3 rounded-xl font-bold hover:bg-black transition mb-2">Message Seller</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div id="chatPanel" class="fixed bottom-4 right-4 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 z-[400] hidden flex-col">
+        <div class="bg-dark p-3 text-white flex justify-between items-center rounded-t-xl">
+             <div class="flex items-center gap-2">
+                 <div id="chatAvatar" class="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold"></div>
+                 <span id="chatTitle" class="text-xs font-bold"></span>
+             </div>
+             <div class="flex items-center gap-3">
+                 <button onclick="clearBuyerChat()" title="Clear Chat History" class="text-white/60 hover:text-red-400 transition"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
+                 <button onclick="closeChat()" class="text-white/80 hover:text-white transition"><i class="fa-solid fa-xmark text-xs"></i></button>
+             </div>
+        </div>
+        <div id="chatMessages" class="h-56 overflow-y-auto p-3 text-[11px] space-y-2 flex flex-col bg-gray-50"></div>
+        <div class="p-2 border-t border-gray-100 flex gap-1">
+            <input id="chatInput" type="text" placeholder="Type..." class="flex-1 bg-gray-100 rounded-lg px-2 py-1 outline-none text-[11px]" onkeydown="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()" class="bg-sage text-white w-7 h-7 rounded-lg"><i class="fa-solid fa-paper-plane text-[10px]"></i></button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SCRIPTS
+    ══════════════════════════════════════ -->
+    <!-- Custom Dialog -->
+    <div id="customDialogBackdrop" class="custom-dialog-backdrop">
+        <div class="custom-dialog text-center">
+            <div id="customDialogIcon" class="w-16 h-16 bg-beige rounded-full flex items-center justify-center text-sage-dark text-2xl mx-auto mb-4">
+                <i class="fa-solid fa-question"></i>
+            </div>
+            <h3 id="customDialogTitle" class="text-xl font-bold text-dark mb-2">Are you sure?</h3>
+            <p id="customDialogMessage" class="text-gray-500 text-sm mb-8 leading-relaxed">This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button id="customDialogCancel" class="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition">Cancel</button>
+                <button id="customDialogConfirm" class="flex-1 px-6 py-3 rounded-xl bg-sage hover:bg-sage-dark text-white font-bold transition shadow-md">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        // Check Auth State for Navbar
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        const badge = document.getElementById('buyerProfileBadge');
+        const authLink = document.getElementById('buyerAuthLink');
+        
+        if (currentUser && currentUser.role === 'buyer') {
+            badge.innerHTML = `<span class="font-bold text-sage-dark text-lg">${currentUser.name.charAt(0).toUpperCase()}</span>`;
+            badge.title = currentUser.name;
+            authLink.innerHTML = `<i class="fa-solid fa-arrow-right-from-bracket"></i> Logout`;
+        } else {
+            badge.innerHTML = `<i class="fa-solid fa-user text-sage-dark"></i>`;
+            badge.title = "Guest";
+            authLink.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> Join / Login`;
+            authLink.href = "index.html";
+            authLink.onclick = null;
+        }
+
+        // Check for checkout bounce
+        if (window.location.search.includes('auth=required')) {
+            setTimeout(() => {
+                showToast('Please Login or Sign Up to proceed to checkout.');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 500);
+        }
+
+        const products = [
+            { id: 1, category: 'Ceramic', name: 'Painted Desert Pottery Vase', price: 85, rating: 4.7, img: 'file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774300737860.jpg', desc: 'Beautifully painted earthen pottery featuring traditional desert and geometric motifs.', seller: 'earth' },
+            { id: 2, category: 'Ceramic', name: 'Glazed Rose Ceramic Bowls', price: 110, rating: 4.9, img: 'file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774300737866.jpg', desc: 'A set of handmade ceramic bowls with stunning iridescent pink and warm rose hues.', seller: 'earth' },
+            { id: 3, category: 'Textile', name: 'Hand-Woven Coastal Tapestry', price: 210, rating: 5.0, img: 'file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774300746126.jpg', desc: 'Intricately hand-woven colorful tapestries featuring vibrant village and aquatic scenes.', seller: 'knitco' },
+            { id: 4, category: 'Home', name: 'Floral Tin Soy Candle', price: 28, rating: 5.0, img: 'file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774301243202.jpg', desc: 'Artisan soy candle poured in a decorative tin with a beautiful geometric mandala pattern. Embedded with dried botanical petals for a natural, soothing scent.', seller: 'willow' }
+        ];
+
+        const sellers = {
+            willow: { name: 'Willow & Co', initials: 'WC', location: 'Portland', bio: 'A small botanical apothecary focused on natural, sustainable home goods.' },
+            knitco: { name: 'Urban Knit Co.', initials: 'UK', location: 'New York', bio: 'Modern knitwear created by a community of independent textile artists.' },
+            earth: { name: 'Earth & Fire Studio', initials: 'EF', location: 'Santa Fe', bio: 'Experimental ceramics studio blending modern forms with traditional firing.' }
+        };
+
+        let cart = JSON.parse(localStorage.getItem('exoraCart') || '[]');
+        let activeProduct = null;
+        let selectedRating = 5;
+        let currentChatSeller = null;
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            const checkedCategories = Array.from(document.querySelectorAll('#categoryFilters input:checked')).map(i => i.value);
+            const sortBy = document.getElementById('sortSelect').value;
+
+            let list = products.filter(p => checkedCategories.includes(p.category));
+
+            if (sortBy === 'p-low') list.sort((a,b) => a.price - b.price);
+            if (sortBy === 'p-high') list.sort((a,b) => b.price - a.price);
+            if (sortBy === 'rating') list.sort((a,b) => b.rating - a.rating);
+
+            document.getElementById('productCount').textContent = `(${list.length})`;
+            
+            grid.innerHTML = list.map(p => `
+                <div class="product-card group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition cursor-pointer animate-fade-in" onclick="openProduct(${p.id})">
+                    <div class="h-72 overflow-hidden relative">
+                        <img src="${p.img}" class="w-full h-full object-cover product-img transition duration-500">
+                        <span class="absolute top-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-full text-[10px] font-bold text-sage">Verified Artisan</span>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="font-bold text-lg group-hover:text-sage transition">${p.name}</h3>
+                            <span class="text-xs text-yellow-400 font-bold">${p.rating} ★</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400 mb-4 line-clamp-1">${p.desc}</p>
+                        <div class="flex justify-between items-center border-t border-gray-50 pt-4">
+                            <span class="font-bold text-xl font-serif text-sage-dark">$${p.price}</span>
+                            <button class="bg-sage text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-sage-dark transition" onclick="event.stopPropagation(); addToCart(${p.id})">Add to Bag</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openProduct(id) {
+            const p = products.find(x => x.id === id);
+            activeProduct = p;
+            document.getElementById('modalImg').src = p.img;
+            document.getElementById('modalTitle').textContent = p.name;
+            document.getElementById('modalCategory').textContent = p.category;
+            document.getElementById('modalPrice').textContent = `$${p.price}`;
+            document.getElementById('modalDesc').textContent = p.desc;
+            document.getElementById('modalRating').innerHTML = '★'.repeat(Math.floor(p.rating));
+            renderComments(id);
+            document.getElementById('productModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function toggleCart() {
+            const overlay = document.getElementById('cartOverlay');
+            const drawer = document.getElementById('cartDrawer');
+            const isOpen = !drawer.classList.contains('translate-x-full');
+            if (isOpen) {
+                drawer.classList.add('translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            } else {
+                renderCart();
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                drawer.classList.remove('translate-x-full');
+            }
+        }
+
+        function addToCart(id) {
+            const p = products.find(x => x.id === id);
+            cart.push({...p, cartId: Date.now()});
+            localStorage.setItem('exoraCart', JSON.stringify(cart));
+            updateBadge();
+        }
+
+        function modalAddToCart() {
+            addToCart(activeProduct.id);
+            const btn = document.getElementById('modalAddBtn');
+            btn.textContent = 'Added!';
+            showToast(`${activeProduct.name} added to cart`);
+            setTimeout(() => btn.textContent = 'Add to Cart', 1000);
+        }
+
+        function removeFromCart(cartId) {
+            cart = cart.filter(x => x.cartId !== cartId);
+            localStorage.setItem('exoraCart', JSON.stringify(cart));
+            renderCart();
+            updateBadge();
+        }
+
+        function updateBadge() {
+            const b = document.getElementById('cartBadge');
+            b.textContent = cart.length;
+            b.classList.toggle('hidden', cart.length === 0);
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            const totalEl = document.getElementById('cartSubtotal');
+            let total = 0;
+            if (cart.length === 0) {
+                container.innerHTML = `<p class="text-center py-10 text-gray-400 text-sm italic">Empty cart</p>`;
+                totalEl.textContent = '$0.00';
+                return;
+            }
+            container.innerHTML = cart.map(item => {
+                total += item.price;
+                return `
+                    <div class="flex gap-3 text-sm">
+                        <img src="${item.img}" class="w-12 h-12 rounded object-cover">
+                        <div class="flex-1">
+                            <p class="font-bold line-clamp-1">${item.name}</p>
+                            <p class="text-xs text-sage">$${item.price}</p>
+                        </div>
+                        <button onclick="removeFromCart(${item.cartId})" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                `;
+            }).join('');
+            totalEl.textContent = `$${total.toFixed(2)}`;
+        }
+
+        function renderComments(productId) {
+            const list = document.getElementById('modalComments');
+            const reviews = JSON.parse(localStorage.getItem(`reviews_${productId}`) || '[]');
+            if (reviews.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-xs italic">No reviews yet.</p>';
+                return;
+            }
+            list.innerHTML = reviews.map((r, index) => `
+                <div class="text-[12px] border-b border-gray-50 pb-3 relative">
+                    <button onclick="deleteReview(${index})" class="absolute top-0 right-0 text-red-400 hover:text-red-500 transition" title="Delete Review"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="font-bold flex justify-between pr-6"><span>${r.name}</span> <span class="text-gray-300 font-normal">${r.date}</span></div>
+                    <div class="text-yellow-400 text-[10px]">${'★'.repeat(r.rating)}</div>
+                    <p class="text-gray-600 mt-1 pr-4">${r.text}</p>
+                </div>
+            `).join('');
+        }
+
+        function deleteReview(index) {
+            showConfirm(
+                'Delete Review?', 
+                'Are you sure you want to remove this comment? This cannot be undone.', 
+                () => {
+                    const key = `reviews_${activeProduct.id}`;
+                    const reviews = JSON.parse(localStorage.getItem(key) || '[]');
+                    reviews.splice(index, 1);
+                    localStorage.setItem(key, JSON.stringify(reviews));
+                    renderComments(activeProduct.id);
+                    showToast('Review deleted successfully');
+                }
+            );
+        }
+
+        function submitReview() {
+            const text = document.getElementById('reviewText').value.trim();
+            if (!text) return;
+            const key = `reviews_${activeProduct.id}`;
+            const reviews = JSON.parse(localStorage.getItem(key) || '[]');
+            reviews.unshift({ name: 'Guest', rating: selectedRating, text, date: new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short' }) });
+            localStorage.setItem(key, JSON.stringify(reviews));
+            document.getElementById('reviewText').value = '';
+            renderComments(activeProduct.id);
+        }
+
+        document.querySelectorAll('#reviewStars i').forEach(star => {
+            star.onclick = function() {
+                selectedRating = parseInt(this.dataset.val);
+                document.querySelectorAll('#reviewStars i').forEach(s => s.classList.toggle('active', s.dataset.val <= selectedRating));
+            }
+        });
+
+        function openChatFromModal() { closeProductModal(); openSellerProfile(activeProduct.seller); }
+
+        function openSellerProfile(key) {
+            const s = sellers[key];
+            currentChatSeller = key;
+            document.getElementById('sellerAvatar').textContent = s.initials;
+            document.getElementById('sellerName').textContent = s.name;
+            document.getElementById('sellerLocation').textContent = `${s.location}, Egypt`;
+            document.getElementById('sellerBio').textContent = s.bio;
+            document.getElementById('sellerModal').classList.remove('hidden');
+        }
+
+        function closeSellerModal() { document.getElementById('sellerModal').classList.add('hidden'); }
+
+        let chatPollInterval = null;
+
+        function loadChatMessages() {
+            const key = `chat_${currentChatSeller}`;
+            const msgs = JSON.parse(localStorage.getItem(key) || '[]');
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = msgs.map(m => `<div class="p-2 rounded-lg max-w-[90%] ${m.from === 'me' ? 'bg-sage text-white self-end' : 'bg-white self-start shadow-sm border border-gray-100'}">${m.text}</div>`).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function openChatFromProfile() {
+            closeSellerModal();
+            const s = sellers[currentChatSeller];
+            document.getElementById('chatTitle').textContent = s.name;
+            document.getElementById('chatAvatar').textContent = s.initials;
+            document.getElementById('chatPanel').style.display = 'flex';
+            loadChatMessages();
+            if(!chatPollInterval) chatPollInterval = setInterval(() => {
+                if(document.getElementById('chatPanel').style.display === 'flex') loadChatMessages();
+            }, 1000);
+        }
+
+        function clearBuyerChat() {
+            showConfirm(
+                'Clear Chat?', 
+                'Are you sure you want to delete the entire conversation with this artisan?', 
+                () => {
+                    const key = `chat_${currentChatSeller}`;
+                    localStorage.removeItem(key);
+                    loadChatMessages();
+                    showToast('Conversation cleared');
+                }
+            );
+        }
+
+        function closeChat() { 
+            document.getElementById('chatPanel').style.display = 'none'; 
+            if(chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+        }
+
+        function sendMessage() {
+            const inp = document.getElementById('chatInput');
+            const text = inp.value.trim();
+            if (!text) return;
+            const key = `chat_${currentChatSeller}`;
+            const msgs = JSON.parse(localStorage.getItem(key) || '[]');
+            msgs.push({from: 'me', text});
+            localStorage.setItem(key, JSON.stringify(msgs));
+            inp.value = '';
+            loadChatMessages();
+            setTimeout(() => {
+                msgs.push({from: 'seller', text: 'I have received your message and will reply soon.'});
+                localStorage.setItem(key, JSON.stringify(msgs));
+                loadChatMessages();
+            }, 1000);
+        }
+
+        document.querySelectorAll('#categoryFilters input').forEach(inp => inp.onchange = renderProducts);
+        updateBadge();
+        renderProducts();
+
+        // Custom Dialog & Toast Logic
+        let confirmCallback = null;
+        function showConfirm(title, message, onConfirm) {
+            document.getElementById('customDialogTitle').textContent = title;
+            document.getElementById('customDialogMessage').textContent = message;
+            document.getElementById('customDialogBackdrop').classList.add('active');
+            confirmCallback = onConfirm;
+        }
+
+        document.getElementById('customDialogConfirm').onclick = () => {
+            if (confirmCallback) confirmCallback();
+            document.getElementById('customDialogBackdrop').classList.remove('active');
+        };
+
+        document.getElementById('customDialogCancel').onclick = () => {
+            document.getElementById('customDialogBackdrop').classList.remove('active');
+        };
+
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-item';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

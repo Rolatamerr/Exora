@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard | Exora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        beige: { DEFAULT: '#f4f1ea', dark: '#e5decb' },
+                        sage: { DEFAULT: '#8a9a86', dark: '#6b7a67', light: '#b1c0ad' },
+                        dark: '#2c3e2e'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item.active { background-color: rgba(138, 154, 134, 0.1); border-right: 4px solid #8a9a86; color: #6b7a67; font-weight: 600; }
+
+        /* Custom Dialog & Toast */
+        .custom-dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .custom-dialog-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .custom-dialog {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .custom-dialog-backdrop.active .custom-dialog {
+            transform: scale(1);
+        }
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+        .toast-item {
+            background: #2c3e2e;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            pointer-events: auto;
+            animation: toastIn 0.3s ease forwards, toastOut 0.3s ease forwards 2.7s;
+        }
+        @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark antialiased" x-data="{ tab: 'dashboard', modalOpen: false, editModalOpen: false, analyticsModalOpen: false, currentEditTitle: '', currentEditPrice: '' }">
+
+    <!-- Top Navbar -->
+    <nav class="bg-white border-b border-gray-200 fixed w-full z-40">
+        <div class="flex justify-between items-center h-16 px-6">
+            <a href="index.html" class="flex-shrink-0 flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-sage text-2xl"></i>
+                <span class="font-serif font-bold text-xl text-sage-dark relative top-0.5">Exora <span class="text-sm font-sans font-normal text-gray-400">Artisan</span></span>
+            </a>
+            <div class="flex items-center gap-4">
+                <button class="text-gray-400 hover:text-sage relative">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span class="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div class="h-8 w-[1px] bg-gray-200 mx-2"></div>
+                <div class="w-8 h-8 rounded-full bg-sage/20 flex items-center justify-center text-sage font-bold text-sm">
+                    EF
+                </div>
+                <span class="font-medium text-sm hidden sm:block">Earth & Fire</span>
+                <a href="index.html" class="ml-4 text-sm text-gray-500 hover:text-dark font-medium transition flex items-center gap-2"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar & Content -->
+    <div class="flex pt-16 h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 shadow-sm flex-shrink-0 flex flex-col hidden md:flex">
+            <div class="p-4 pt-8 space-y-2 flex-1">
+                <button @click="tab = 'dashboard'" :class="tab === 'dashboard' ? 'active' : ''" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-l-lg text-gray-600 hover:bg-gray-50 transition w-full text-left">
+                    <i class="fa-solid fa-chart-pie w-5"></i> Dashboard Overview
+                </button>
+                <button @click="tab = 'products'" :class="tab === 'products' ? 'active' : ''" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-l-lg text-gray-600 hover:bg-gray-50 transition w-full text-left">
+                    <i class="fa-solid fa-boxes-stacked w-5"></i> My Products
+                </button>
+                <button @click="tab = 'orders'" :class="tab === 'orders' ? 'active' : ''" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-l-lg text-gray-600 hover:bg-gray-50 transition w-full text-left">
+                    <i class="fa-solid fa-receipt w-5"></i> Orders & Escrow
+                </button>
+                <button @click="tab = 'messages'" :class="tab === 'messages' ? 'active' : ''" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-l-lg text-gray-600 hover:bg-gray-50 transition w-full text-left">
+                    <i class="fa-solid fa-message w-5"></i> Messages
+                </button>
+                <button @click="tab = 'verification'" :class="tab === 'verification' ? 'active' : ''" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-l-lg text-gray-600 hover:bg-gray-50 transition w-full text-left">
+                    <i class="fa-solid fa-shield-halved w-5"></i> Verification Status
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-6 md:p-10">
+            
+            <!-- Dashboard Tab -->
+            <div x-show="tab === 'dashboard'" x-transition>
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 id="sellerWelcomeHeader" class="text-3xl font-serif font-bold text-dark mb-1">Welcome back, Earth & Fire Studio</h1>
+                        <p class="text-gray-500">Here is what is happening with your handcrafted items.</p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div id="sellerStatsGrid" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-beige flex items-center justify-center text-sage-dark text-xl"><i class="fa-solid fa-eye"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Store Views</p>
+                            <h3 class="text-2xl font-bold text-dark">1,248</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-xl"><i class="fa-solid fa-heart"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Item Reactions</p>
+                            <h3 class="text-2xl font-bold text-dark">342</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-500 text-xl"><i class="fa-solid fa-check"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Quality Checked</p>
+                            <h3 class="text-2xl font-bold text-dark">4 items</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 text-xl"><i class="fa-solid fa-wallet"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm">In Escrow</p>
+                            <h3 class="text-2xl font-bold text-dark">$1,250</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity / Items -->
+                <div id="sellerRecentActivity" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-lg">Top Performing Listings</h3>
+                        <a href="#" @click.prevent="tab = 'products'" class="text-sm text-sage-dark font-medium hover:underline">View All</a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
+                                    <th class="p-4 font-medium">Product Details</th>
+                                    <th class="p-4 font-medium">Status</th>
+                                    <th class="p-4 font-medium">Views</th>
+                                    <th class="p-4 font-medium">Likes/Saves</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                    <td class="p-4 flex items-center gap-4">
+                                        <img src="file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774300737860.jpg" alt="Vase" class="w-16 h-16 rounded object-cover">
+                                        <div>
+                                            <p class="font-bold text-sm text-dark">Painted Desert Pottery Vase</p>
+                                            <p class="text-xs text-gray-500">Listed 2 weeks ago</p>
+                                        </div>
+                                    </td>
+                                    <td class="p-4"><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Active - Verified</span></td>
+                                    <td class="p-4 text-dark font-medium cursor-pointer relative group flex items-center gap-2">
+                                        <i class="fa-solid fa-chart-line text-blue-400"></i> 450
+                                    </td>
+                                    <td class="p-4 text-dark font-medium flex items-center gap-2">
+                                        <i class="fa-solid fa-heart text-red-400"></i> 120
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                                    <td class="p-4 flex items-center gap-4">
+                                        <img src="file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774300737866.jpg" alt="Bowls" class="w-16 h-16 rounded object-cover">
+                                        <div>
+                                            <p class="font-bold text-sm text-dark">Glazed Rose Ceramic Bowls</p>
+                                            <p class="text-xs text-gray-500">Active</p>
+                                        </div>
+                                    </td>
+                                    <td class="p-4"><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Active - Verified</span></td>
+                                    <td class="p-4 text-dark font-medium cursor-pointer relative group flex items-center gap-2">
+                                        <i class="fa-solid fa-chart-line text-blue-400"></i> 210
+                                    </td>
+                                    <td class="p-4 text-dark font-medium flex items-center gap-2">
+                                        <i class="fa-solid fa-heart text-red-400"></i> 45
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div x-show="tab === 'products'" style="display: none;" x-transition>
+                <div class="flex justify-between items-center mb-8">
+                    <h1 class="text-3xl font-serif font-bold text-dark mb-1">My Products</h1>
+                    <button @click="modalOpen = true" class="bg-sage hover:bg-sage-dark text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition">
+                        Add New
+                    </button>
+                </div>
+                <!-- Grid of user's products -->
+                <div id="sellerProductsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <img src="file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774300737860.jpg" alt="product" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">Painted Desert Pottery Vase</h3>
+                            <div class="text-sm text-gray-500 mb-3 flex items-center justify-between">
+                                <span>$85</span>
+                                <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">Active</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="editModalOpen = true; currentEditTitle = 'Painted Desert Pottery Vase'; currentEditPrice = '85'" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded font-medium text-sm transition">Edit</button>
+                                <button @click="analyticsModalOpen = true" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded font-medium text-sm transition">Analytics</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <img src="file:///C:/Users/LOQ/.gemini/antigravity/brain/90262383-630f-42cc-8a24-49bfa6747bf3/media__1774300737866.jpg" alt="product" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">Glazed Rose Ceramic Bowls</h3>
+                            <div class="text-sm text-gray-500 mb-3 flex items-center justify-between">
+                                <span>$110</span>
+                                <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Active</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="editModalOpen = true; currentEditTitle = 'Glazed Rose Ceramic Bowls'; currentEditPrice = '110'" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded font-medium text-sm transition">Edit</button>
+                                <button @click="analyticsModalOpen = true" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded font-medium text-sm transition">Analytics</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages Tab -->
+            <div x-show="tab === 'messages'" style="display: none;" x-transition class="h-[calc(100vh-8rem)] flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-serif font-bold text-dark">Customer Messages</h1>
+                </div>
+                <!-- Chat Interface -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex-1 flex overflow-hidden">
+                    <!-- Conversations List -->
+                    <div class="w-1/3 border-r border-gray-100 bg-gray-50 flex flex-col">
+                        <div class="p-4 border-b border-gray-200 font-bold text-dark bg-white">Recent Inquiries</div>
+                        <div id="demoChatContact" class="p-4 bg-white border-l-4 border-sage cursor-pointer hover:bg-gray-50 transition flex flex-col">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-sm text-dark">Guest Buyer</span>
+                                <span class="text-[10px] text-sage font-bold uppercase tracking-wider">Online</span>
+                            </div>
+                            <p class="text-xs text-gray-500 truncate">Select to view conversation history</p>
+                        </div>
+                    </div>
+                    <!-- Chat Area -->
+                    <div class="flex-1 flex flex-col bg-white">
+                        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-sage/20 flex items-center justify-center text-sage font-bold text-sm">G</div>
+                                <h3 class="font-bold text-dark text-sm">Guest Buyer</h3>
+                            </div>
+                            <button onclick="clearSellerChat()" title="Clear Chat History" class="text-gray-400 hover:text-red-500 transition text-sm flex items-center gap-1 bg-gray-50 hover:bg-red-50 px-2 py-1 rounded"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                        </div>
+                        <div id="sellerChatMessages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-white flex flex-col">
+                            <!-- JS will inject messages here -->
+                        </div>
+                        <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-2 items-center">
+                            <input type="text" id="sellerChatInput" placeholder="Write a reply to Guest Buyer..." class="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm focus:border-sage focus:ring-1 focus:ring-sage transition" onkeydown="if(event.key==='Enter') sendSellerMessage()">
+                            <button onclick="sendSellerMessage()" class="bg-sage hover:bg-sage-dark text-white px-6 py-2.5 rounded-xl font-bold transition shadow-sm">Send Reply</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div x-show="tab === 'orders'" style="display: none;" x-transition class="h-full">
+                <div class="flex justify-between items-center mb-8">
+                    <h1 class="text-3xl font-serif font-bold text-dark mb-1">Orders & Escrow</h1>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center max-w-2xl mx-auto mt-10">
+                    <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"><i class="fa-solid fa-box-open"></i></div>
+                    <h3 class="text-lg font-bold text-dark mb-2">No active orders yet</h3>
+                    <p class="text-gray-500 text-sm max-w-sm mx-auto">When buyers purchase your products, the funds will be held securely in escrow until delivery is confirmed.</p>
+                </div>
+            </div>
+
+            <!-- Verification Tab -->
+            <div x-show="tab === 'verification'" style="display: none;" x-transition class="h-full">
+                <div class="flex justify-between items-center mb-8">
+                    <h1 class="text-3xl font-serif font-bold text-dark mb-1">Verification Status</h1>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-2xl mx-auto mt-10">
+                    <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                        <div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center text-3xl"><i class="fa-solid fa-shield-check"></i></div>
+                        <div>
+                            <h3 class="text-xl font-bold text-dark">Fully Verified Artisan</h3>
+                            <p class="text-gray-500 text-sm mt-1">Your identity and craft processes have been vetted by our local QC team.</p>
+                        </div>
+                    </div>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-center gap-3 text-green-700 font-medium"><i class="fa-solid fa-circle-check"></i> Identity Verification</li>
+                        <li class="flex items-center gap-3 text-green-700 font-medium"><i class="fa-solid fa-circle-check"></i> Workshop Location Confirmed</li>
+                        <li class="flex items-center gap-3 text-green-700 font-medium"><i class="fa-solid fa-circle-check"></i> Material Sourcing Vetted</li>
+                        <li class="flex items-center gap-3 text-green-700 font-medium"><i class="fa-solid fa-circle-check"></i> Quality Control Passed</li>
+                    </ul>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div x-show="editModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;">
+        <div class="absolute inset-0 bg-dark/40 backdrop-blur-sm" @click="editModalOpen = false"></div>
+        <div class="bg-white rounded-2xl shadow-2xl z-10 w-full max-w-lg p-6 relative" x-transition>
+            <button @click="editModalOpen = false" class="absolute top-4 right-4 text-gray-400 hover:text-dark"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h2 class="text-2xl font-bold mb-6 font-serif text-dark">Edit Product</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input type="text" x-model="currentEditTitle" class="w-full border border-gray-300 rounded-lg py-2 px-3 outline-none focus:border-sage focus:ring-1 focus:ring-sage text-dark font-medium">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                    <input type="number" x-model="currentEditPrice" class="w-full border border-gray-300 rounded-lg py-2 px-3 outline-none focus:border-sage focus:ring-1 focus:ring-sage text-dark font-medium">
+                </div>
+                <!-- Additional generic fields for immersion -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                    <input type="number" value="12" class="w-full border border-gray-300 rounded-lg py-2 px-3 outline-none focus:border-sage focus:ring-1 focus:ring-sage text-dark font-medium">
+                </div>
+                <div class="pt-6 flex justify-end gap-3 border-t border-gray-50 mt-2">
+                    <button type="button" @click="editModalOpen = false" class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition shadow-sm">Cancel</button>
+                    <button type="button" @click="editModalOpen = false; showToast('Changes saved successfully!')" class="px-5 py-2.5 rounded-lg bg-sage hover:bg-sage-dark text-white font-medium transition shadow-sm">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Modal -->
+    <div x-show="analyticsModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;">
+        <div class="absolute inset-0 bg-dark/40 backdrop-blur-sm" @click="analyticsModalOpen = false"></div>
+        <div class="bg-white rounded-2xl shadow-2xl z-10 w-full max-w-lg p-6 relative" x-transition>
+            <button @click="analyticsModalOpen = false" class="absolute top-4 right-4 text-gray-400 hover:text-dark"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h2 class="text-2xl font-bold mb-6 font-serif text-dark">Product Analytics</h2>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-sage/20 text-sage flex justify-center items-center text-lg"><i class="fa-solid fa-eye"></i></div>
+                    <div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total Views</p>
+                        <p class="text-2xl font-bold text-dark">1,248</p>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex justify-center items-center text-lg"><i class="fa-solid fa-cart-shopping"></i></div>
+                    <div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Units Sold</p>
+                        <p class="text-2xl font-bold text-dark">14</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Dummy Bar Chart -->
+            <div class="h-40 bg-gray-50 rounded-xl border border-gray-100 flex items-end px-4 pt-10 pb-0 gap-2 justify-between overflow-hidden">
+                <div class="w-full flex justify-between items-end h-full gap-2">
+                    <div class="w-10 bg-sage rounded-t-sm hover:opacity-80 transition cursor-pointer relative group" style="height: 30%">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-dark text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Mon: 4</div>
+                    </div>
+                    <div class="w-10 bg-sage rounded-t-sm hover:opacity-80 transition cursor-pointer relative group" style="height: 50%">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-dark text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Tue: 7</div>
+                    </div>
+                    <div class="w-10 bg-sage rounded-t-sm hover:opacity-80 transition cursor-pointer relative group" style="height: 40%">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-dark text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Wed: 6</div>
+                    </div>
+                    <div class="w-10 bg-sage rounded-t-sm hover:opacity-80 transition cursor-pointer relative group" style="height: 80%">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-dark text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Thu: 11</div>
+                    </div>
+                    <div class="w-10 bg-sage rounded-t-sm hover:opacity-80 transition cursor-pointer relative group" style="height: 60%">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-dark text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Fri: 8</div>
+                    </div>
+                    <div class="w-10 bg-sage rounded-t-sm hover:opacity-80 transition cursor-pointer relative group" style="height: 100%">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-dark text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Sat: 14</div>
+                    </div>
+                    <div class="w-10 bg-dark rounded-t-sm hover:opacity-80 transition cursor-pointer relative group" style="height: 90%">
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-sage text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap font-bold">Sun: 12</div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center text-xs font-bold tracking-widest uppercase text-gray-400 mt-4 mb-2">Sales over last 7 days</p>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div x-show="modalOpen" @close-modal.window="modalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="absolute inset-0 bg-dark/40 backdrop-blur-sm" @click="modalOpen = false"></div>
+        <div class="bg-white rounded-2xl shadow-2xl z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto" x-transition>
+            <div class="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center z-20">
+                <h2 class="text-2xl font-bold font-serif text-dark">Add New Product</h2>
+                <button @click="modalOpen = false" class="text-gray-400 hover:text-dark">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <!-- Upload form simulator -->
+                <form class="space-y-6" onsubmit="event.preventDefault(); submitNewProduct();">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Upload Photos</label>
+                        <label class="border-2 border-dashed border-sage/40 rounded-xl p-8 text-center bg-sage/5 hover:bg-sage/10 transition cursor-pointer block relative">
+                            <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-sage mb-3"></i>
+                            <p class="text-gray-600 font-medium">Click to upload or drag & drop</p>
+                            <p class="text-xs text-gray-400 mt-1">High-quality images showing full design and texture details.</p>
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                            <input id="newProductTitle" type="text" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-sage focus:outline-none" placeholder="e.g. Traditional Wool Kilim">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
+                            <input id="newProductPrice" type="number" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-sage focus:outline-none" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="newProductDesc" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-sage focus:outline-none" rows="4" placeholder="Describe the materials, meaning behind the pattern, and any other details..."></textarea>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg flex items-start gap-3">
+                        <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
+                        <p class="text-sm text-blue-800">Upon submission, your listing will be reviewed by our local Quality Control partners before becoming public. This helps maintain the "Built on trust" guarantee for our buyers.</p>
+                    </div>
+                    <div class="pt-4 flex justify-end gap-3">
+                        <button type="button" @click="modalOpen = false" class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition">Cancel</button>
+                        <button type="button" class="px-5 py-2.5 rounded-lg bg-sage hover:bg-sage-dark text-white font-medium transition shadow-sm" onclick="submitNewProduct()" @click="modalOpen = false">Submit for Review</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Dialog -->
+    <div id="customDialogBackdrop" class="custom-dialog-backdrop">
+        <div class="custom-dialog text-center">
+            <div id="customDialogIcon" class="w-16 h-16 bg-beige rounded-full flex items-center justify-center text-sage-dark text-2xl mx-auto mb-4">
+                <i class="fa-solid fa-question"></i>
+            </div>
+            <h3 id="customDialogTitle" class="text-xl font-bold text-dark mb-2">Are you sure?</h3>
+            <p id="customDialogMessage" class="text-gray-500 text-sm mb-8 leading-relaxed">This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button id="customDialogCancel" class="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition">Cancel</button>
+                <button id="customDialogConfirm" class="flex-1 px-6 py-3 rounded-xl bg-sage hover:bg-sage-dark text-white font-bold transition shadow-md">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Seller Chat Script -->
+    <script>
+        // Setup Auth State & Empty UI
+        const currentSeller = JSON.parse(localStorage.getItem('currentUser')) || { name: 'Earth & Fire Studio', email: 'earthandfire@gmail.com' };
+        
+        document.getElementById('sellerWelcomeHeader').textContent = `Welcome back, ${currentSeller.name || currentSeller.workshop || 'Artisan'}`;
+        
+        const CHAT_KEY = 'chat_' + currentSeller.email.split('@')[0];
+        let lastMessageCount = 0;
+
+        if (currentSeller.email !== 'earthandfire@gmail.com') {
+            document.getElementById('sellerStatsGrid').innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-beige flex items-center justify-center text-sage-dark text-xl"><i class="fa-solid fa-eye"></i></div><div><p class="text-gray-500 text-sm">Store Views</p><h3 class="text-2xl font-bold text-dark">0</h3></div></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 text-xl"><i class="fa-solid fa-heart"></i></div><div><p class="text-gray-500 text-sm">Item Reactions</p><h3 class="text-2xl font-bold text-dark">0</h3></div></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-500 text-xl"><i class="fa-solid fa-check"></i></div><div><p class="text-gray-500 text-sm">Quality Checked</p><h3 class="text-2xl font-bold text-dark">0 items</h3></div></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 text-xl"><i class="fa-solid fa-wallet"></i></div><div><p class="text-gray-500 text-sm">In Escrow</p><h3 class="text-2xl font-bold text-dark">$0</h3></div></div>
+            `;
+            document.getElementById('sellerRecentActivity').style.display = 'none';
+            document.getElementById('sellerProductsGrid').innerHTML = `
+                <div class="col-span-full py-12 text-center bg-white rounded-2xl border border-dashed border-gray-300">
+                    <div class="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"><i class="fa-solid fa-box-open"></i></div>
+                    <h3 class="font-bold text-lg mb-2">No Products Yet</h3>
+                    <p class="text-gray-500 text-sm mb-4">You haven't added any products to your artisan portfolio.</p>
+                </div>
+            `;
+            const demoContact = document.getElementById('demoChatContact');
+            if(demoContact) demoContact.style.display = 'none';
+        }
+
+        function loadSellerMessages() {
+            const msgs = JSON.parse(localStorage.getItem(CHAT_KEY) || '[]');
+            const container = document.getElementById('sellerChatMessages');
+            if (!container) return;
+            
+            // Only update DOM if there are new messages to prevent jarring re-renders
+            if (msgs.length === lastMessageCount) return;
+            lastMessageCount = msgs.length;
+
+            if (msgs.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10 italic">No messages yet. Waiting for a buyer inquiry...</div>';
+                return;
+            }
+
+            container.innerHTML = msgs.map(m => {
+                const isSeller = m.from === 'seller';
+                return `
+                    <div class="flex flex-col ${isSeller ? 'items-end' : 'items-start'} animate-fade-in">
+                        <div class="px-4 py-2.5 max-w-[75%] text-sm shadow-sm ${isSeller ? 'bg-sage text-white rounded-2xl rounded-tr-sm' : 'bg-gray-100 text-dark rounded-2xl rounded-tl-sm border border-gray-200'}">
+                            ${m.text}
+                        </div>
+                        <span class="text-[10px] text-gray-400 mt-1 mx-1">${isSeller ? 'Earth & Fire (You)' : 'Buyer'}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            // Auto scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendSellerMessage() {
+            const input = document.getElementById('sellerChatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const msgs = JSON.parse(localStorage.getItem(CHAT_KEY) || '[]');
+            msgs.push({ from: 'seller', text: text });
+            localStorage.setItem(CHAT_KEY, JSON.stringify(msgs));
+
+            input.value = '';
+            loadSellerMessages();
+        }
+
+        function clearSellerChat() {
+            showConfirm(
+                'Clear History?', 
+                'Are you sure you want to delete all messages in this conversation?', 
+                () => {
+                    localStorage.removeItem(CHAT_KEY);
+                    lastMessageCount = 0;
+                    document.getElementById('sellerChatMessages').innerHTML = '<div class="text-center text-gray-400 text-sm mt-10 italic">No messages yet. Waiting for a buyer inquiry...</div>';
+                    showToast('Chat history cleared');
+                }
+            );
+        }
+
+        // Poll for new messages every 1 second
+        setInterval(loadSellerMessages, 1000);
+        
+        // Initial load
+        document.addEventListener('DOMContentLoaded', loadSellerMessages);
+
+        // Product Submission
+        function submitNewProduct() {
+            const title = document.getElementById('newProductTitle').value || 'New Prototype Product';
+            const price = document.getElementById('newProductPrice').value || '0';
+            
+            const grid = document.getElementById('sellerProductsGrid');
+            if(grid) {
+                const newCardHTML = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in relative">
+                        <div class="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
+                            <span class="bg-yellow-100 text-yellow-800 font-bold px-3 py-1 rounded-full text-sm shadow-sm border border-yellow-200"><i class="fa-solid fa-hourglass-half mr-1"></i> Pending QC Review</span>
+                        </div>
+                        <div class="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-300"><i class="fa-solid fa-image text-4xl"></i></div>
+                        <div class="p-4 opacity-70">
+                            <h3 class="font-bold text-lg mb-1">${title}</h3>
+                            <div class="text-sm text-gray-500 mb-3 flex items-center justify-between">
+                                <span class="font-bold">$${price}</span>
+                                <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Draft</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-gray-100 text-gray-700 py-1.5 rounded font-medium text-sm border-gray-200 cursor-not-allowed">Edit</button>
+                                <button class="flex-1 bg-gray-100 text-gray-700 py-1.5 rounded font-medium text-sm border-gray-200 cursor-not-allowed">Analytics</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('afterbegin', newCardHTML);
+                showToast('Product added successfully!');
+            }
+            // Clear inputs and close modal using Alpine
+            document.getElementById('newProductTitle').value = '';
+            document.getElementById('newProductPrice').value = '';
+            document.getElementById('newProductDesc').value = '';
+            
+            // Dispatch a custom event to Alpine to close the modal
+            document.dispatchEvent(new CustomEvent('close-modal'));
+        }
+        // Custom Dialog & Toast Logic
+        let confirmCallback = null;
+        function showConfirm(title, message, onConfirm) {
+            document.getElementById('customDialogTitle').textContent = title;
+            document.getElementById('customDialogMessage').textContent = message;
+            document.getElementById('customDialogBackdrop').classList.add('active');
+            confirmCallback = onConfirm;
+        }
+
+        document.getElementById('customDialogConfirm').onclick = () => {
+            if (confirmCallback) confirmCallback();
+            document.getElementById('customDialogBackdrop').classList.remove('active');
+        };
+
+        document.getElementById('customDialogCancel').onclick = () => {
+            document.getElementById('customDialogBackdrop').classList.remove('active');
+        };
+
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-item';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>
