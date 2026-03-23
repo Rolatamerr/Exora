@@ -374,8 +374,8 @@
         }
 
         const products = [
-            { id: 1, category: 'Ceramic', name: 'Painted Desert Pottery Vase', price: 85, rating: 4.7, img: 'images/media__1774300737860.jpg', desc: 'Beautifully painted earthen pottery featuring traditional desert and geometric motifs.', seller: 'earth' },
-            { id: 2, category: 'Ceramic', name: 'Glazed Rose Ceramic Bowls', price: 110, rating: 4.9, img: 'images/media__1774300737866.jpg', desc: 'A set of handmade ceramic bowls with stunning iridescent pink and warm rose hues.', seller: 'earth' },
+            { id: 1, category: 'Ceramic', name: 'Painted Desert Pottery Vase', price: 85, rating: 4.7, img: 'images/media__1774300737860.jpg', desc: 'Beautifully painted earthen pottery featuring traditional desert and geometric motifs.', seller: 'earthandfire' },
+            { id: 2, category: 'Ceramic', name: 'Glazed Rose Ceramic Bowls', price: 110, rating: 4.9, img: 'images/media__1774300737866.jpg', desc: 'A set of handmade ceramic bowls with stunning iridescent pink and warm rose hues.', seller: 'earthandfire' },
             { id: 3, category: 'Textile', name: 'Hand-Woven Coastal Tapestry', price: 210, rating: 5.0, img: 'images/media__1774300746126.jpg', desc: 'Intricately hand-woven colorful tapestries featuring vibrant village and aquatic scenes.', seller: 'knitco' },
             { id: 4, category: 'Home', name: 'Floral Tin Soy Candle', price: 28, rating: 5.0, img: 'images/media__1774301243202.jpg', desc: 'Artisan soy candle poured in a decorative tin with a beautiful geometric mandala pattern. Embedded with dried botanical petals for a natural, soothing scent.', seller: 'willow' }
         ];
@@ -383,7 +383,7 @@
         const sellers = {
             willow: { name: 'Willow & Co', initials: 'WC', location: 'Portland', bio: 'A small botanical apothecary focused on natural, sustainable home goods.' },
             knitco: { name: 'Urban Knit Co.', initials: 'UK', location: 'New York', bio: 'Modern knitwear created by a community of independent textile artists.' },
-            earth: { name: 'Earth & Fire Studio', initials: 'EF', location: 'Santa Fe', bio: 'Experimental ceramics studio blending modern forms with traditional firing.' }
+            earthandfire: { name: 'Earth & Fire Studio', initials: 'EF', location: 'Santa Fe', bio: 'Experimental ceramics studio blending modern forms with traditional firing.' }
         };
 
         let cart = JSON.parse(localStorage.getItem('exoraCart') || '[]');
