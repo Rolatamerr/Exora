@@ -108,6 +108,10 @@
         @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
     </style>
+
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 </head>
 <body class="bg-gray-50 text-dark antialiased">
 
@@ -348,6 +352,19 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1exUy_Zq9aG4Ayb-eoU5K_MfT14vnciA",
+            authDomain: "exora-883a4.firebaseapp.com",
+            projectId: "exora-883a4",
+            storageBucket: "exora-883a4.firebasestorage.app",
+            messagingSenderId: "171052667862",
+            appId: "1:171052667862:web:0029b6e8e3220446e38a77",
+            databaseURL: "https://exora-883a4-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         // Check Auth State for Navbar
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         const badge = document.getElementById('buyerProfileBadge');
@@ -581,16 +598,27 @@
 
 
 
+        let currentChatRef = null;
+
         function openChatFromProfile() {
             closeSellerModal();
             const s = sellers[currentChatSeller];
             document.getElementById('chatTitle').textContent = s.name;
             document.getElementById('chatAvatar').textContent = s.initials;
             document.getElementById('chatPanel').style.display = 'flex';
-            loadChatMessages();
-            if(!chatPollInterval) chatPollInterval = setInterval(() => {
-                if(document.getElementById('chatPanel').style.display === 'flex') loadChatMessages();
-            }, 1000);
+            
+            const key = getActiveChatKey();
+            if (currentChatRef) currentChatRef.off('value');
+            
+            currentChatRef = db.ref('chats/' + key);
+            currentChatRef.on('value', (snapshot) => {
+                const msgs = snapshot.val() || [];
+                const msgsArray = Array.isArray(msgs) ? msgs : Object.values(msgs);
+                
+                const container = document.getElementById('chatMessages');
+                container.innerHTML = msgsArray.map(m => `<div class="p-2 rounded-lg max-w-[90%] ${m.from === 'me' ? 'bg-sage text-white self-end' : 'bg-white self-start shadow-sm border border-gray-100'}">${m.text}</div>`).join('');
+                container.scrollTop = container.scrollHeight;
+            });
         }
 
         function clearBuyerChat() {
@@ -599,8 +627,7 @@
                 'Are you sure you want to delete the entire conversation with this artisan?', 
                 () => {
                     const key = getActiveChatKey();
-                    localStorage.removeItem(key);
-                    loadChatMessages();
+                    db.ref('chats/' + key).remove();
                     showToast('Conversation cleared');
                 }
             );
@@ -608,7 +635,7 @@
 
         function closeChat() { 
             document.getElementById('chatPanel').style.display = 'none'; 
-            if(chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+            if (currentChatRef) currentChatRef.off('value');
         }
 
         function getActiveChatKey() {
@@ -623,50 +650,39 @@
             if (!text) return;
             
             const key = getActiveChatKey();
-            const msgs = JSON.parse(localStorage.getItem(key) || '[]');
-            
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             const senderName = currentUser ? currentUser.name : 'Guest Buyer';
             
-            msgs.push({from: 'me', text, senderName});
-            localStorage.setItem(key, JSON.stringify(msgs));
+
+            db.ref('chats/' + key).once('value', snap => {
+                const msgs = snap.val() || [];
+                const msgsArray = Array.isArray(msgs) ? msgs : Object.values(msgs);
+                msgsArray.push({from: 'me', text, senderName});
+                db.ref('chats/' + key).set(msgsArray);
+
+                // Bot Auto-Reply
+                setTimeout(() => {
+                    db.ref('chats/' + key).once('value', botSnap => {
+                        const botMsgs = botSnap.val() || [];
+                        const botArray = Array.isArray(botMsgs) ? botMsgs : Object.values(botMsgs);
+                        botArray.push({from: 'seller', text: 'I have received your message and will reply soon.'});
+                        db.ref('chats/' + key).set(botArray);
+                    });
+                }, 1000);
+            });
             inp.value = '';
-            loadChatMessages();
-            setTimeout(() => {
-                const updatedMsgs = JSON.parse(localStorage.getItem(key) || '[]');
-                updatedMsgs.push({from: 'seller', text: 'I have received your message and will reply soon.'});
-                localStorage.setItem(key, JSON.stringify(updatedMsgs));
-                loadChatMessages();
-            }, 1000);
         }
-
-        function loadChatMessages() {
-            if (!currentChatSeller) return;
-            const key = getActiveChatKey();
-            const msgs = JSON.parse(localStorage.getItem(key) || '[]');
-            const container = document.getElementById('chatMessages');
-            container.innerHTML = msgs.map(m => `<div class="p-2 rounded-lg max-w-[90%] ${m.from === 'me' ? 'bg-sage text-white self-end' : 'bg-white self-start shadow-sm border border-gray-100'}">${m.text}</div>`).join('');
-            container.scrollTop = container.scrollHeight;
-        }
-
         function clearBuyerChat() {
             showConfirm(
                 'Clear Chat?', 
                 'Are you sure you want to delete the entire conversation with this artisan?', 
                 () => {
                     const key = getActiveChatKey();
-                    localStorage.removeItem(key);
-                    loadChatMessages();
+                    db.ref('chats/' + key).remove();
                     showToast('Conversation cleared');
                 }
             );
         }
-
-        window.addEventListener('storage', (e) => {
-            if (e.key === getActiveChatKey()) {
-                loadChatMessages();
-            }
-        });
 
         document.querySelectorAll('#categoryFilters input').forEach(inp => inp.onchange = renderProducts);
         updateBadge();

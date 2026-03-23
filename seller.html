@@ -85,6 +85,10 @@
         @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
     </style>
+
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 </head>
 <body class="bg-gray-50 text-dark antialiased" x-data="{ tab: 'dashboard', modalOpen: false, editModalOpen: false, analyticsModalOpen: false, currentEditTitle: '', currentEditPrice: '' }">
 
@@ -496,6 +500,19 @@
 
     <!-- Seller Chat Script -->
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1exUy_Zq9aG4Ayb-eoU5K_MfT14vnciA",
+            authDomain: "exora-883a4.firebaseapp.com",
+            projectId: "exora-883a4",
+            storageBucket: "exora-883a4.firebasestorage.app",
+            messagingSenderId: "171052667862",
+            appId: "1:171052667862:web:0029b6e8e3220446e38a77",
+            databaseURL: "https://exora-883a4-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         // Setup Auth State & Empty UI
         let currentSeller = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentSeller || currentSeller.role !== 'seller') {
@@ -525,19 +542,26 @@
             `;
         }
 
+        let globalChatData = {};
+
+        db.ref('chats').on('value', (snapshot) => {
+            globalChatData = snapshot.val() || {};
+            renderConversationList();
+        });
+
         function renderConversationList() {
             const listEl = document.getElementById('sellerConversationList');
             if(!listEl) return;
             
             const threads = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
+            for (const key in globalChatData) {
                 if (key.startsWith(BASE_CHAT_KEY)) {
-                    const msgs = JSON.parse(localStorage.getItem(key) || '[]');
-                    if (msgs.length > 0) {
-                        const buyerMsgs = msgs.filter(m => m.from === 'me');
+                    const msgs = globalChatData[key] || [];
+                    const msgsArray = Array.isArray(msgs) ? msgs : Object.values(msgs);
+                    if (msgsArray.length > 0) {
+                        const buyerMsgs = msgsArray.filter(m => m.from === 'me');
                         const name = buyerMsgs.length > 0 && buyerMsgs[buyerMsgs.length-1].senderName ? buyerMsgs[buyerMsgs.length-1].senderName : 'Guest Buyer';
-                        const lastMsg = msgs[msgs.length-1].text;
+                        const lastMsg = msgsArray[msgsArray.length-1].text;
                         threads.push({ key, name, lastMsg });
                     }
                 }
@@ -545,10 +569,21 @@
 
             if (threads.length === 0) {
                 listEl.innerHTML = '<div class="p-6 text-center text-sm text-gray-400 italic">No inquiries yet.</div>';
+                const container = document.getElementById('sellerChatMessages');
+                if (container) {
+                    container.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10 italic">Waiting for an inquiry...</div>';
+                    const headerName = document.querySelector('.bg-gray-50\\/50 h3');
+                    const headerInitial = document.querySelector('.bg-gray-50\\/50 .rounded-full');
+                    if(headerName) headerName.textContent = 'No Active Chat';
+                    if(headerInitial) headerInitial.textContent = '?';
+                }
                 return;
             }
 
-            if (!activeChatKey) activeChatKey = threads[0].key;
+            if (!activeChatKey || !threads.find(t => t.key === activeChatKey)) {
+                activeChatKey = threads[0].key;
+                lastMessageCount = -1;
+            }
 
             listEl.innerHTML = threads.map(t => `
                 <div onclick="selectConversation('${t.key}')" class="p-4 bg-white ${t.key === activeChatKey ? 'border-l-4 border-sage bg-gray-50' : 'border-l-4 border-transparent'} cursor-pointer hover:bg-gray-50 transition flex flex-col border-b border-gray-50">
@@ -572,21 +607,15 @@
             const container = document.getElementById('sellerChatMessages');
             if (!container) return;
 
-            if (!activeChatKey) {
-                container.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10 italic">Waiting for an inquiry...</div>';
-                const headerName = document.querySelector('.bg-gray-50\\/50 h3');
-                const headerInitial = document.querySelector('.bg-gray-50\\/50 .rounded-full');
-                if(headerName) headerName.textContent = 'No Active Chat';
-                if(headerInitial) headerInitial.textContent = '?';
-                return;
-            }
+            if (!activeChatKey) return;
 
-            const msgs = JSON.parse(localStorage.getItem(activeChatKey) || '[]');
+            const msgs = globalChatData[activeChatKey] || [];
+            const msgsArray = Array.isArray(msgs) ? msgs : Object.values(msgs);
             
-            if (msgs.length === lastMessageCount) return;
-            lastMessageCount = msgs.length;
+            if (msgsArray.length === lastMessageCount) return;
+            lastMessageCount = msgsArray.length;
 
-            const buyerMsgs = msgs.filter(m => m.from === 'me');
+            const buyerMsgs = msgsArray.filter(m => m.from === 'me');
             let buyerName = 'Guest Buyer';
             if (buyerMsgs.length > 0 && buyerMsgs[buyerMsgs.length - 1].senderName) {
                 buyerName = buyerMsgs[buyerMsgs.length - 1].senderName;
@@ -597,12 +626,12 @@
             if(headerName) headerName.textContent = buyerName;
             if(headerInitial) headerInitial.textContent = buyerName.charAt(0).toUpperCase();
 
-            if (msgs.length === 0) {
+            if (msgsArray.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-400 text-sm mt-10 italic">No messages yet.</div>';
                 return;
             }
 
-            container.innerHTML = msgs.map(m => {
+            container.innerHTML = msgsArray.map(m => {
                 const isSeller = m.from === 'seller';
                 const displayName = isSeller ? 'Earth & Fire (You)' : buyerName;
                 return `
@@ -624,13 +653,14 @@
             const text = input.value.trim();
             if (!text) return;
 
-            const msgs = JSON.parse(localStorage.getItem(activeChatKey) || '[]');
-            msgs.push({ from: 'seller', text: text });
-            localStorage.setItem(activeChatKey, JSON.stringify(msgs));
+            db.ref('chats/' + activeChatKey).once('value', snap => {
+                const msgs = snap.val() || [];
+                const msgsArray = Array.isArray(msgs) ? msgs : Object.values(msgs);
+                msgsArray.push({ from: 'seller', text: text });
+                db.ref('chats/' + activeChatKey).set(msgsArray);
+            });
 
             input.value = '';
-            loadSellerMessages();
-            renderConversationList(); // Update the thread list preview text
         }
 
         function clearSellerChat() {
@@ -639,27 +669,13 @@
                 'Clear History?', 
                 'Are you sure you want to delete all messages in this conversation?', 
                 () => {
-                    localStorage.removeItem(activeChatKey);
+                    db.ref('chats/' + activeChatKey).remove();
                     lastMessageCount = 0;
                     activeChatKey = null;
-                    renderConversationList();
                     showToast('Chat history cleared');
                 }
             );
         }
-
-        // Poll for new messages every 1 second
-        setInterval(renderConversationList, 1000);
-        
-        // Listen for storage events for instant cross-tab sync
-        window.addEventListener('storage', (e) => {
-            if (e.key && e.key.startsWith(BASE_CHAT_KEY)) {
-                renderConversationList();
-            }
-        });
-        
-        // Initial load
-        document.addEventListener('DOMContentLoaded', renderConversationList);
 
         // Product Submission
         function submitNewProduct() {
