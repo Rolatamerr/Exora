@@ -508,7 +508,7 @@
         
         document.getElementById('sellerWelcomeHeader').textContent = `Welcome back, ${currentSeller.name || currentSeller.workshop || 'Artisan'}`;
         
-        const CHAT_KEY = 'chat_' + currentSeller.email.split('@')[0];
+        const CHAT_KEY = 'chat_' + currentSeller.email.toLowerCase().split('@')[0];
         let lastMessageCount = -1;
 
         if (currentSeller.email !== 'earthandfire@gmail.com') {
